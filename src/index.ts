@@ -11,6 +11,14 @@ interface User {
     pw_hash: string,
 }
 
+interface Message {
+    message_id: string,
+    channel_id: string,
+    user_id: string,
+    content: string,
+    message_time: string,
+}
+
 const pool = new Pool();
 
 async function runQuery<T extends QueryResultRow>(query: QueryConfig<any>, values?: any[]): Promise<QueryResult<T>> {
@@ -31,6 +39,11 @@ async function getUserById(id: string): Promise<User | null> {
     return user ?? null;
 }
 
+async function getMessages(channel_id: string): Promise<Message[]> {
+    const rows = await runQuery<Message>({ text: 'SELECT * FROM messages WHERE channel_id = $1::bigint' }, [channel_id]).then((r) => r.rows);
+    return rows;
+}
+
 const app: Express = express();
 const port = process.env.PORT;
 
@@ -44,14 +57,8 @@ app.get('/users/', async (req, res) => {
     res.send(await getUsers());
 });
 
-app.get('/messages/', (req, res) => {
-    const messages = [
-        "one",
-        "two",
-        "three",
-        "four",
-        "five",
-    ]
+app.get('/messages/', async (req, res) => {
+    const messages = await getMessages('1');
 
     res.send(messages);
 });
